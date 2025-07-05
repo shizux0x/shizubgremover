@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const form = new formidable.IncomingForm({ maxFileSize: 12 * 1024 * 1024 });
+  const form = new formidable.IncomingForm({ maxFileSize: 12 * 1024 * 1024, keepExtensions: true });
   form.parse(req, async (err, fields, files) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -31,8 +31,14 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Remove.bg API key not configured' });
         return;
       }
+      // Try all possible file path properties
+      const filePath = file.filepath || file.path || (file._writeStream && file._writeStream.path);
+      if (!filePath) {
+        res.status(500).json({ error: 'Could not determine file path for upload.' });
+        return;
+      }
       const formData = new FormData();
-      formData.append('image_file', fs.createReadStream(file.path), file.name);
+      formData.append('image_file', fs.createReadStream(filePath), file.name || file.originalFilename);
       formData.append('size', 'auto');
       const response = await fetch('https://api.remove.bg/v1.0/removebg', {
         method: 'POST',
