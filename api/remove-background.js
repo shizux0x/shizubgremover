@@ -32,7 +32,7 @@ export default async function handler(req, res) {
         return;
       }
       const formData = new FormData();
-      formData.append('image_file', fs.createReadStream(file.filepath), file.originalFilename);
+      formData.append('image_file', fs.createReadStream(file.path), file.name);
       formData.append('size', 'auto');
       const response = await fetch('https://api.remove.bg/v1.0/removebg', {
         method: 'POST',
