@@ -215,7 +215,22 @@ function copyImageUrl() {
 // Share Image
 async function shareImage() {
     if (!processedImageUrl) return;
-    if (navigator.share) {
+    if (navigator.canShare && navigator.canShare({ files: [new File([], '')] })) {
+        try {
+            // Fetch the blob from the processed image URL
+            const response = await fetch(processedImageUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'background-removed.png', { type: 'image/png' });
+            await navigator.share({
+                title: 'Shizu BG Remover',
+                text: 'Check out this image with the background removed!',
+                files: [file]
+            });
+        } catch (err) {
+            showToast('Sharing failed or was cancelled.');
+        }
+    } else if (navigator.share) {
+        // Fallback: share the URL if file sharing is not supported
         try {
             await navigator.share({
                 title: 'Shizu BG Remover',
@@ -223,7 +238,7 @@ async function shareImage() {
                 url: processedImageUrl
             });
         } catch (err) {
-            // User cancelled or error
+            showToast('Sharing failed or was cancelled.');
         }
     } else {
         // Fallback: copy to clipboard and show a tooltip/modal
