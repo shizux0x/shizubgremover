@@ -1,6 +1,6 @@
 import formidable from 'formidable';
 import fetch from 'node-fetch';
-import fs from 'fs';
+import FormData from 'form-data';
 
 export const config = {
   api: {
@@ -31,14 +31,15 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Remove.bg API key not configured' });
         return;
       }
-      // Try all possible file path properties
-      const filePath = file.filepath || file.path || (file._writeStream && file._writeStream.path);
-      if (!filePath) {
-        res.status(500).json({ error: 'Could not determine file path for upload.' });
+      // Use the file buffer directly
+      const fileBuffer = file.buffer || (file._writeStream && file._writeStream._buffer);
+      const fileName = file.name || file.originalFilename || 'upload.png';
+      if (!fileBuffer) {
+        res.status(500).json({ error: 'Could not get file buffer for upload.' });
         return;
       }
       const formData = new FormData();
-      formData.append('image_file', fs.createReadStream(filePath), file.name || file.originalFilename);
+      formData.append('image_file', fileBuffer, { filename: fileName, contentType: file.mimetype });
       formData.append('size', 'auto');
       const response = await fetch('https://api.remove.bg/v1.0/removebg', {
         method: 'POST',
