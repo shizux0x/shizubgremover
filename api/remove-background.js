@@ -1,6 +1,7 @@
 import formidable from 'formidable';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
+import fs from 'fs';
 
 export const config = {
   api: {
@@ -31,16 +32,19 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'Remove.bg API key not configured' });
         return;
       }
-      // Use the file buffer directly
-      const fileBuffer = file.buffer || (file._writeStream && file._writeStream._buffer);
+      // Read the file from disk as a buffer
+      const filePath = file.filepath || file.path;
       const fileName = file.name || file.originalFilename || 'upload.png';
-      if (!fileBuffer) {
-        res.status(500).json({ error: 'Could not get file buffer for upload.' });
+      if (!filePath) {
+        res.status(500).json({ error: 'Could not determine file path for upload.' });
         return;
       }
+      const fileBuffer = fs.readFileSync(filePath);
+
       const formData = new FormData();
       formData.append('image_file', fileBuffer, { filename: fileName, contentType: file.mimetype });
       formData.append('size', 'auto');
+
       const response = await fetch('https://api.remove.bg/v1.0/removebg', {
         method: 'POST',
         headers: {
@@ -49,11 +53,13 @@ export default async function handler(req, res) {
         },
         body: formData,
       });
+
       if (!response.ok) {
         const errorText = await response.text();
         res.status(response.status).json({ error: `Remove.bg API error: ${response.status} - ${errorText}` });
         return;
       }
+
       const imageBuffer = await response.buffer();
       res.setHeader('Content-Type', 'image/png');
       res.setHeader('Content-Disposition', 'attachment; filename="background-removed.png"');
