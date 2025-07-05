@@ -1,3 +1,8 @@
+// --- Configurable Backend URL ---
+// Set this to your deployed backend URL (e.g., Render, Railway, etc.)
+const BACKEND_URL = 'https://your-backend.onrender.com'; // <-- CHANGE THIS to your backend's public URL
+// For local development, you can use: 'http://localhost:3001'
+
 // Configuration
 const API_URL = '/api/remove-background';
 
